@@ -1,0 +1,16 @@
+.players {
+    padding-top: 100px;
+}
+
+a {
+    color: #000;
+}
+
+.player {
+    border: 1px solid #fff;
+    cursor: pointer;
+}
+
+.player:hover {
+    border: 1px solid #000;
+}

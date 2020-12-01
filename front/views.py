@@ -1,15 +1,39 @@
 from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
 import numpy as np
 import pandas as pd
 import csv
 from django.db import connection
 import datetime
+from pprint import pprint
+from inspect import getmembers
 
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+    return render(request, 'index.html', {'hola': 'jaime'})
 
-def refresh_cassandra(request):
+def players(request):
+    cursor = connection.cursor()
+
+    players = cursor.execute('SELECT * FROM tennis_players')
+    return render(request, 'players.html', {'players': players})
+
+def player(request, id):
+    cursor = connection.cursor()
+
+    matches = cursor.execute('SELECT * FROM tennis_matches')
+    
+    cont = 0
+    for match in matches:
+        cont += 1
+
+    assert False, (cont,)        
+    matches = [match for match in matches if match['winner_id'] == int(id) or str(match['loser_id']) == int(id)]
+    #matches = list(filter(lambda match: match['winner_id'] == 'Jan Kodes', matches))
+    #assert False, (matches,)
+    return render(request, 'player.html', {'matches': matches})
+
+def refresh_matches(request):
     cursor = connection.cursor()
 
     csv_file = open('./TenisMatchesModif.csv')
@@ -22,11 +46,13 @@ def refresh_cassandra(request):
             print(f'Column names are {", ".join(row)}')
             line_count += 1
         else:
-            print(f'\t{row[0]} works in the {row[1]} department, and was born in {row[2]}.')
+            print(
+                f'\t{row[0]} works in the {row[1]} department, and was born in {row[2]}.')
             line_count += 1
             columns = getColumns()
             values = getValues(row)
-            query = "INSERT INTO development.tennis_matches (" + ','.join(columns) + ") VALUES ("
+            query = "INSERT INTO development.tennis_matches (" + ','.join(
+                columns) + ") VALUES ("
 
             index = 0
             for value in values:
@@ -34,7 +60,7 @@ def refresh_cassandra(request):
                     query += ','
 
                 if isinstance(value, str):
-                    value = value.replace("'", "\'")
+                    value = value.replace("'", "`")
                     query += "'" + value + "'"
 
                 if isinstance(value, int):
@@ -56,11 +82,62 @@ def refresh_cassandra(request):
                 index += 1
 
             query += ")"
-            break
+            #break
             result = cursor.execute(query)
 
+    return HttpResponse(query)
+
+
+def refresh_players(request):
+    cursor = connection.cursor()
+
+    csv_file = pd.read_csv(
+        'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_players.csv', header=None, names=['id', 'name', 'lastname', 'hand', 'birthdate', 'nationality'])
+
+    result = ''
+    line_count = 0
+    for row in csv_file.itertuples():
+        #assert False, (row.birthdate,)
+        columns = ["tennis_player_id", "name", "lastname",
+                   "birthdate", "nationality", "created_at", "updated_at"]
+        values = [int(row.id), str(row.name), str(row.lastname), datetime.datetime.strptime(str(int(row.birthdate)), '%Y%m%d').date(), str(
+            row.nationality), datetime.datetime.now(), datetime.datetime.now()]   
+        query = "INSERT INTO development.tennis_players (" + ','.join(
+            columns) + ") VALUES ("
+
+        index = 0
+        for value in values:
+            if index != 0:
+                query += ','
+
+            if isinstance(value, str):
+                value = value.replace("'", "\'")
+                query += "'" + value + "'"
+
+            if isinstance(value, int):
+                value = str(value)
+                query += value
+
+            if isinstance(value, float):
+                value = str(value)
+                query += value
+
+            if isinstance(value, datetime.datetime):
+                value = format(value)
+                query += "'" + value + "'"
+
+            if isinstance(value, datetime.date):
+                value = format(value)
+                query += "'" + value + "'"
+
+            index += 1
+
+        query += ")"
+        #break
+        result = cursor.execute(query)
 
     return HttpResponse(query)
+
 
 def getColumns():
     return ["tennis_match_id",
@@ -110,6 +187,7 @@ def getColumns():
             "created_at",
             "updated_at"]
 
+
 def getValues(row):
     try:
         tennis_match_id = int(row[0])
@@ -119,7 +197,7 @@ def getValues(row):
         tourney_date = datetime.datetime.strptime(row[4], '%Y%m%d').date()
         match_num = int(row[5])
         winner_id = int(row[6])
-        winner_seed = float(row[7]) if row[7] else 0.0
+        winner_seed = float(row[7]) if row[7] != '' else 0.0
         winner_name = str(row[8])
         winner_ht = float(row[9]) if row[9] else 0.0
         winner_ioc = str(row[10])
@@ -152,10 +230,10 @@ def getValues(row):
         l_SvGms = int(row[37]) if row[37] else 0
         l_bpSaved = int(row[38]) if row[38] else 0
         l_bpFaced = int(row[39]) if row[39] else 0
-        winner_rank = int(row[40]) if row[40] else 0
-        winner_rank_points = int(row[41]) if row[41] else 0
+        winner_rank = int(row[40]) if row[40] != '' else 0
+        winner_rank_points = int(row[41]) if row[41] != '' else 0
         loser_rank = int(row[42]) if row[42] else 0
-        loser_rank_points = int(row[43]) if row[43] else 0
+        loser_rank_points = int(row[43]) if row[43] != '' else 0
         created_at = datetime.datetime.now()
         updated_at = datetime.datetime.now()
 
@@ -207,4 +285,5 @@ def getValues(row):
                 updated_at)
 
     except:
-        raise Exception("El texto es: " + str(type(row[7])) + ' - ' + str(len(row[7])))
+        raise Exception("El texto es: " +
+                        str(row[7] + ' - ' + type(row[7])) + ' - ' + str(len(row[7])))

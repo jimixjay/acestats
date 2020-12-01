@@ -38,9 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'psycopg2'
 ]
-
-INSTALLED_APPS = ['django_cassandra_engine'] + INSTALLED_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,20 +76,28 @@ WSGI_APPLICATION = 'acestats.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
+    #'default': {
+    #    'ENGINE': 'django_cassandra_engine',
+    #    'NAME': 'development',
+    #    'TEST_NAME': 'test_db',
+    #    'USER_NAME':'cassandra',
+    #    'PASSWORD': 'cassandra',
+    #    'HOST': '82.223.111.168',
+    #    'PORT': '9042',
+    #    'OPTIONS': {
+    #        'replication': {
+    #            'strategy_class': 'SimpleStrategy',
+    #            'replication_factor': 1
+    #        }
+    #    }
     'default': {
-        'ENGINE': 'django_cassandra_engine',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'development',
-        'TEST_NAME': 'test_db',
-        'USER_NAME':'cassandra',
-        'PASSWORD': 'cassandra',
+        'USER': 'development',
+        'PASSWORD': 'development',
         'HOST': '82.223.111.168',
-        'PORT': '9042',
-        'OPTIONS': {
-            'replication': {
-                'strategy_class': 'SimpleStrategy',
-                'replication_factor': 1
-            }
-        }
+        'PORT': '5432',
+
     }
 }
 
