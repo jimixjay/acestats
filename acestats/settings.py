@@ -25,13 +25,15 @@ SECRET_KEY = '5*twv%t19=yy7wwy*s(%83nn!*sl%j332w^gy1%$!$u5+%f8u+'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'front.apps.FrontConfig',
+    'api.apps.ApiConfig',
+    'front.services',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,7 +81,7 @@ DATABASES = {
     #'default': {
     #    'ENGINE': 'django_cassandra_engine',
     #    'NAME': 'development',
-    #    'TEST_NAME': 'test_db',
+    #    'TEST_NAME': 'test_db', 
     #    'USER_NAME':'cassandra',
     #    'PASSWORD': 'cassandra',
     #    'HOST': '82.223.111.168',
@@ -92,10 +94,11 @@ DATABASES = {
     #    }
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'development',
-        'USER': 'development',
-        'PASSWORD': 'development',
-        'HOST': '82.223.111.168',
+        'NAME': 'acestats',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',
+        #'HOST': '127.0.0.1',
         'PORT': '5432',
 
     }

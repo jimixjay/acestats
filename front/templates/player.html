@@ -1,84 +1,524 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="/docs/4.0/assets/img/favicons/favicon.ico">
+{% extends 'base.html' %}
 
-    <title>Acestats</title>
-
-    <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/carousel/">
-
-    <!-- Bootstrap core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
-    <link href="{% static 'front/css/players.css' %}" rel="stylesheet">
-  </head>
-  <body>
-
-    <header>
-      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-        <a class="navbar-brand" href="#">Carousel</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Link</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link disabled" href="#">Disabled</a>
-            </li>
-          </ul>
-          <form class="form-inline mt-2 mt-md-0">
-            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
-        </div>
-      </nav>
-    </header>
-
-    <main role="main">
-      <div class="container players">
+{% block container%}
+  {% load static %}
+  <div class="container players">
         <div class="row">
-        {% for match in matches %}
-          <div class="col-sm-12 player">
+          <div class="col-sm-6">
             <div class="row">
-              <div class="col-sm-3">{{ match.tourney_name }}</div>
-              <div class="col-sm-3">{{ match.winner_name }}</div>
-              <div class="col-sm-3">{{ match.loser_name }}</div>
-              <div class="col-sm-2">{{ match.result }}</div>
-              <div class="col-sm-1">{{ match.tourney_date }}</div>
+              <div class="col-sm-2">
+                <img width="100%%" src="{% static 'front/img/default.png' %}">
+              </div>
+              <div class="col-sm-10">
+                <h1>{{ player.name }} {{ player.surname }}</h1>
+              </div>  
             </div>
+            <div class="row player-info">
+              <div class="col-sm-6"><b>Games played:</b> {{ total_matches }}</div>
+              <div class="col-sm-6"><b>Birthdate:</b> {{ player.birthday }}</div>
+              <div class="col-sm-6"><b>Hand:</b> {% if player.hand == 'R' %}Right{% else %}{% if player.hand == 'L' %}Left{% else %}Unknown{% endif %}{% endif %}</div>
+              <div class="col-sm-6"><b>Ranking ATP <small>({{ rank_date }})</small>:</b> {{ rank }} {% if rank > previous_rank %}<span style="color:red;"><span class="fa fa-chevron-down"></span> {{ diff_rank }}{% endif %}{% if rank < previous_rank %}<span style="color:green;"><span class="fa fa-chevron-up"></span> {{ diff_rank }}{% endif %}{% if rank == previous_rank %}<span style="color: grey"><span class="fa fa-equals"></span></span>{% endif %}</div>
+            </div>  
           </div>
-        {% endfor %}
+          <div class="col-sm-6">
+            <div id="rankings">
+              <img src="{% static 'front/img/spinner.gif' %}">
+            </div>
+          </div>  
+        </div>
+        <div class="row">    
+          <div class="col-sm-12 tab-container">
+            <ul class="nav nav-tabs">
+              <li class="nav-item">
+                <a class="nav-link" id="stats-tab" data-toggle="tab" href="#stats" role="tab" aria-controls="stats" aria-selected="false" onclick=""><span class="fa fa-table"></span> Stats</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="game-by-game-tab" data-toggle="tab" href="#game-by-game" role="tab" aria-controls="stats" aria-selected="false" onclick="gameByGame();"><span class="fa fa-th-list"></span> Game by game</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="advance-tab" data-toggle="tab" href="#advance" role="tab" aria-controls="advance" aria-selected="false" onclick="advanceStats();"><span class="fa fa-chart-bar"></span> Advance stats</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="ranking-tab" data-toggle="tab" href="#ranking" role="tab" aria-controls="ranking" aria-selected="false"><span class="fa fa-chart-line"></span> Ranking</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link disabled" id="compare-tab" data-toggle="tab" href="#compare" role="tab" aria-controls="compare" aria-selected="false"><span class="fa fa-greater-than-equal"></span> Comparative</a>
+              </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+              <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="home-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="data_visualization1" class="col-sm-12" style="display:none"></div>
+              </div>
+              <div class="tab-pane fade" id="game-by-game" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="game-by-game-container">
+                  <div class="selectors-game-by-game">
+                    <select onchange="refreshTourneys();" id="years" class="form-control"></select>
+                    <select onchange="refreshGames();" id="tourney_selector" class="form-control"></select>
+                  </div>
+                  <div class="row">
+                    <div class="game-table"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="advance" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div class="row">
+                  <div id="canvas-winRating" class="col-sm-6" style="display:none"></div>
+                  <div id="canvas-acesPerGamePerSurface" class="col-sm-6" style="display:none"></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="ranking" role="tabpanel" aria-labelledby="contact-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                  <div id="data_visualization3" class="col-sm-12" style="display:none"></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="compare" role="tabpanel" aria-labelledby="contact-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                  <div id="data_visualization4" class="col-sm-12" style="display:none"></div>
+                </div>
+              </div>
+            </div>
+            <div class="clear"></div>
+          </div> 
         </div>
       </div>
-      <script>
-      
-      </script>
+{% endblock %}
 
+{% block js %}
+  {{ block.super }}
+  <script>
+        function gameByGame() {
+          loadYearAndTourneys();
+        }
 
-      <!-- FOOTER -->
-      <footer class="container">
-        <p class="float-right"><a href="#">Back to top</a></p>
-        <p>&copy; 2017-2018 Company, Inc. &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
-      </footer>
-    </main>
+        function advanceStats() {
+          getWinsRating();  
+          getAcesPerGamePerSurface();
+        }
+        
+        function showLoader(index) {
+          $("#" + index).css("display", "none");
+          $(".loader").show();
+        }
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
-</html>
+        function showVisualization(index) {
+          $(".loader").hide();
+          $("#" + index).css("display", "block");
+        }
+
+        var dataYearsAndTourneys = null;
+
+        function loadYearAndTourneys() {
+          showLoader('game-by-game-container');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.years_and_tourneys' player.id %}',
+            'success': function(data) {
+              dataYearsAndTourneys = data;
+              var htmlYears = '';
+              Object.entries(data).forEach(function(element, index, array) {
+                htmlYears += '<option value="' + element[0] + '">' + element[0] + '</option>'
+              })
+              $(".selectors-game-by-game #years").html(htmlYears);
+
+              showVisualization('game-by-game-container');
+            }
+          })
+        }
+
+        function refreshTourneys() {
+          $("#tourney_selector").html("");
+          var year = $("#years").val();
+
+          var htmlTourneys = '';
+          console.log(year);
+          console.log(dataYearsAndTourneys);
+          Object.entries(dataYearsAndTourneys[year]).forEach(function(element, index, array) {
+            htmlTourneys += '<option value="' + element[1]['tourney_id'] + '">' + element[1]['name'] + ' (' + element[1]['surface'] + ')</option>'
+          });
+          $(".selectors-game-by-game #tourney_selector").html(htmlTourneys);
+        }
+
+        function refreshGames() {
+          var tourney = $("#tourney_selector").val();
+
+          $.ajax({
+            'type': 'post',
+            
+            'data': {'tourney_id': tourney},
+            'success': function(data) {
+
+            }
+          });
+        }
+
+        function getWinsRating() {
+          showLoader('canvas-winRating');
+          Plotly.purge('canvas-winRating');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.win_ratings' player.id %}',
+            'success': function(data) {
+              console.log(data);
+              //data = JSON.parse(data);
+              var x = [];
+              var y = [];
+              var texts = [];
+              var xrange = [];
+              var loopIndex = 0;
+              var lastYear = '';
+              Object.entries(data).forEach(function(element, index, array) {
+                if (loopIndex == 0) {
+                  xrange.push(element[0]);
+                }
+                loopIndex++;
+
+                x.push(element[0]);
+                y.push(element[1]['rating']);
+                texts.push("Year: " + element[0] + "<br>Wins: " + element[1]['wins'] + "<br>Losses: " + element[1]['losses']);
+                lastYear = element[0];
+              });
+
+              xrange.push(lastYear);
+
+              drawScatter('Win rating by year', x, y, texts, xrange, [0, 100], {fill: 'tozeroy', suffix: "%", divId: "canvas-winRating", showlegend: false});
+              showVisualization('canvas-winRating');
+            }
+          });
+        }
+
+        function getAcesPerGamePerSurface() {
+          showLoader('canvas-acesPerGamePerSurface');
+          Plotly.purge('canvas-acesPerGamePerSurface');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.aces_per_game_per_surface' player.id %}',
+            'success': function(data) {
+              console.log(data);
+              //data = JSON.parse(data);
+              var trace1 = [];
+              trace1['x'] = [];
+              trace1['y'] = [];
+              trace1['texts'] = [];
+              trace1['color'] = '#7f91c7';
+              trace1['name'] = 'Hard';
+
+              var trace2 = [];
+              trace2['x'] = [];
+              trace2['y'] = [];
+              trace2['texts'] = [];
+              trace2['color'] = '#c9891a';
+              trace2['name'] = 'Clay';
+
+              var trace3 = [];
+              trace3['x'] = [];
+              trace3['y'] = [];
+              trace3['texts'] = [];
+              trace3['color'] = '#3c821b';
+              trace3['name'] = 'Grass';
+
+              var trace4 = [];
+              trace4['x'] = [];
+              trace4['y'] = [];
+              trace4['texts'] = [];
+              trace4['color'] = '#0a1678';
+              trace4['name'] = 'Carpet';
+                
+              var xrange = [];
+              var maxAces = 0;
+              var loopIndex = 0;
+              var lastYear = '';
+              Object.entries(data).forEach(function(element, index, array) {
+                if (loopIndex == 0) {
+                  xrange.push(element[0]);
+                }
+                loopIndex++;
+            
+                var averageAces = 0;
+                var games = 0;
+
+                trace1.y.push(element[0]);
+                if ('Hard' in element[1]) {
+                  averageAces = element[1]['Hard']['aces'] / element[1]['Hard']['games'];
+                  games = element[1]['Hard']['games'];
+                  maxAces = averageAces;
+                } else {
+                  averageAces = 0;
+                  games = 0;
+                }
+                trace1.x.push(averageAces);
+                if (games != 0 && averageAces != 0) {
+                  trace1.texts.push("<b>Hard</b> " + averageAces.toFixed(2) + " aces per game<br>in " + games + " in games played");
+                }  
+
+                trace2.y.push(element[0]);
+                if ('Clay' in element[1]) {
+                  averageAces = element[1]['Clay']['aces'] / element[1]['Clay']['games'];
+                  games = element[1]['Clay']['games'];
+
+                  if (averageAces > maxAces) {
+                    maxAces = averageAces;
+                  }
+                } else {
+                  averageAces = 0;
+                  games = 0;
+                }
+                trace2.x.push(averageAces);
+                if (games != 0 && averageAces != 0) {
+                  trace2.texts.push("<b>Clay</b> " + averageAces.toFixed(2) + " aces per game<br>in " + games + " in games played");
+                }
+
+                trace3.y.push(element[0]);
+                if ('Grass' in element[1]) {
+                  averageAces = element[1]['Grass']['aces'] / element[1]['Grass']['games'];
+                  games = element[1]['Grass']['games'];
+
+                  if (averageAces > maxAces) {
+                    maxAces = averageAces;
+                  }
+                } else {
+                  averageAces = 0;
+                  games = 0;
+                }
+                trace3.x.push(averageAces);
+                if (games != 0 && averageAces != 0) {
+                  trace3.texts.push("<b>Grass</b> " + averageAces.toFixed(2) + " aces per game<br>in " + games + " in games played");
+                }
+
+                trace4.y.push(element[0]);
+                if ('Carpet' in element[1]) {
+                  averageAces = element[1]['Carpet']['aces'] / element[1]['Carpet']['games'];
+                  games = element[1]['Carpet']['games'];
+
+                  if (averageAces > maxAces) {
+                    maxAces = averageAces;
+                  }
+                } else {
+                  averageAces = 0;
+                  games = 0;
+                }
+                trace4.x.push(averageAces);
+                if (games != 0 && averageAces != 0) {
+                  trace4.texts.push("<b>Carpet</b> " + averageAces.toFixed(2) + " aces per game<br>in " + games + " in games played");
+                }
+
+                lastYear = element[0];
+              });
+
+              xrange.push(lastYear);
+
+              drawBarChar('Aces per game', trace1, trace2, trace3, trace4, xrange, [0, maxAces + 2], {fill: 'none', suffix: " aces", divId: "canvas-acesPerGamePerSurface", showlegend: true});
+              showVisualization('canvas-acesPerGamePerSurface');
+            }
+          });
+        }
+
+        getRankings();
+
+        function getRankings() {
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.rankings' player.id %}',
+            'success': function(data) {
+              $("#rankings").html("")
+              console.log(data);
+              //data = JSON.parse(data);
+              var x = [];
+              var y = [];
+              var texts = [];
+              var xrange = [];
+              var loopIndex = 0;
+              var lastRange = '';
+              var minRank = 501;
+              var maxRank = 0;
+              Object.entries(data).forEach(function(element, index, array) {
+                if (loopIndex == 0) {
+                  xrange.push(element[0]);
+                }
+                loopIndex++;
+
+                if (element[1] > maxRank) {
+                  maxRank = element[1]
+                }
+
+                if (element[1] < minRank) {
+                  minRank = element[1]
+                }
+
+                x.push(element[0]);
+                y.push(element[1]);
+                texts.push(element[0] + " rank: " + element[1]);
+                lastRange = element[0];
+              });
+
+              xrange.push(lastRange);
+
+              var diffRank = maxRank - minRank;
+              while (diffRank > 100) {
+                maxRank = maxRank / 2;
+                diffRank = maxRank - minRank
+              } 
+
+              drawScatter('Historic ATP ranking', x, y, texts, xrange, [maxRank + 10, minRank - 10], {fill: 'none', suffix: "", divId: "rankings", showlegend: false});
+              showVisualization();
+            }
+          });
+        }
+
+        function drawScatter(title, x, y, texts, xrange, yrange, config) {
+          trace1 = {
+            type: 'scatter',
+            x: x,
+            y: y,
+            mode: 'lines',
+            name: 'Red',
+            hovertext: texts,   
+            hoverinfo: 'text',
+            fill: config.fill,
+            hoverlabel: {
+              bgcolor: '#fff',
+              bordercolor: '#000'
+            },
+            line: {
+              color: 'rgb(219, 64, 82)',
+              width: 3
+            }
+          };
+
+          var layout = {
+              title: {
+                text: title,
+                size: 10
+              },
+              margin: {
+                l: 50,
+                r: 10,
+                t: 50,
+                b: 50
+              },
+              showlegend: config.showlegend,
+              xaxis: {
+                range: xrange
+              },
+              yaxis: {
+                range: yrange,
+                ticksuffix: config.suffix
+              },
+          };
+
+          var data = [trace1];
+
+          Plotly.newPlot(config.divId, data, layout, {displayModeBar: false, resopnsive: true});
+        }
+
+        function drawBarChar(title, trace1Data, trace2Data, trace3Data, trace4Data, xrange, yrange, config) {
+          trace1 = {
+            type: 'bar',
+            x: trace1Data.x,
+            y: trace1Data.y,
+            name: trace1Data.name,
+            orientation: 'h',
+            hovertext: trace1Data.texts,   
+            hoverinfo: 'text',            
+            hoverlabel: {
+              bgcolor: '#fff',
+              bordercolor: '#000'
+            },
+            marker: {
+              color: trace1Data.color,
+              width: 3
+            }
+          };
+
+          trace2 = {
+            type: 'bar',
+            x: trace2Data.x,
+            y: trace2Data.y,
+            name: trace2Data.name,
+            orientation: 'h',
+            hovertext: trace2Data.texts,   
+            hoverinfo: 'text',            
+            hoverlabel: {
+              bgcolor: '#fff',
+              bordercolor: '#000'
+            },
+            marker: {
+              color: trace2Data.color,
+              width: 3
+            }
+          };
+
+          trace3 = {
+            type: 'bar',
+            x: trace3Data.x,
+            y: trace3Data.y,
+            name: trace3Data.name,
+            orientation: 'h',
+            hovertext: trace3Data.texts,   
+            hoverinfo: 'text',            
+            hoverlabel: {
+              bgcolor: '#fff',
+              bordercolor: '#000'
+            },
+            marker: {
+              color: trace3Data.color,
+              width: 3
+            }
+          };
+
+          trace4 = {
+            type: 'bar',
+            x: trace4Data.x,
+            y: trace4Data.y,
+            name: trace4Data.name,
+            orientation: 'h',
+            hovertext: trace4Data.texts,   
+            hoverinfo: 'text',            
+            hoverlabel: {
+              bgcolor: '#fff',
+              bordercolor: '#000'
+            },
+            marker: {
+              color: trace4Data.color,
+              width: 3
+            }
+          };
+
+          var data = [trace1, trace2, trace3, trace4];
+
+          var layout = {
+              title: {
+                text: title,
+                size: 10
+              },
+              barmode: 'stack',
+              /*margin: {
+                l: 20,
+                r: 10,
+                t: 50,
+                b: 50
+              },*/
+              showlegend: config.showlegend,
+              /*xaxis: {
+                range: xrange
+              },
+              yaxis: {
+                range: yrange,
+                ticksuffix: config.suffix
+              },*/
+          };
+
+          Plotly.newPlot(config.divId, data, layout, {displayModeBar: false, resopnsive: true});
+        }
+       </script>
+{% endblock %}

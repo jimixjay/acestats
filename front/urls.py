@@ -10,7 +10,8 @@ urlpatterns = [
     path('players', views.players, name='players'),
     path('player/<id>', views.player, name='player'),
     path('refresh/matches', views.refresh_matches, name='refresh_matches'),
-    path('refresh/players', views.refresh_players, name="refresh_players")
+    path('refresh/players', views.refresh_players, name="refresh_players"),
+    path('refresh/rankings', views.refresh_rankings, name="refresh_rankings")
 ]
 
 if settings.DEBUG:
