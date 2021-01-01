@@ -92,11 +92,11 @@ DATABASES = {
     #    }
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'development',
-        'USER': 'development',
-        'PASSWORD': 'development',
-        'HOST': '82.223.111.168',
-        'PORT': '5432',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'ciceMasterpSqL',
+        'HOST': '127.0.0.1',
+        'PORT': '5433',
 
     }
 }
