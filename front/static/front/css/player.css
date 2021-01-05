@@ -1,0 +1,39 @@
+.player-info {
+    margin-top: 50px;
+}
+
+.tab-container {
+    padding-bottom: 50px;
+}
+
+.loader img {
+    width: 100px;
+}
+
+.honor-trophy {
+    display: inline-block;
+}
+
+.match-final:nth-child(even) {
+    background: rgb(27, 60, 93, 0.2)
+}
+
+.match-final:nth-child(odd) {
+    background: rgb(28, 124, 162, 0.2)
+}
+
+.player-last-5-games {
+    margin-top: 10px;
+}
+
+.player-last-5-games h4 {
+    font-size: 20px;
+}
+
+.player-last-5-games .red {
+    background: rgb(214, 160, 152, 0.5)
+}
+
+.player-last-5-games .green {
+    background: rgb(151, 232, 172, 0.5)
+}

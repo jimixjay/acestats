@@ -1,84 +1,598 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="/docs/4.0/assets/img/favicons/favicon.ico">
+{% extends 'base.html' %}
 
-    <title>Acestats</title>
-
-    <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/carousel/">
-
-    <!-- Bootstrap core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
-    <link href="{% static 'front/css/players.css' %}" rel="stylesheet">
-  </head>
-  <body>
-
-    <header>
-      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-        <a class="navbar-brand" href="#">Carousel</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Link</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link disabled" href="#">Disabled</a>
-            </li>
-          </ul>
-          <form class="form-inline mt-2 mt-md-0">
-            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
-        </div>
-      </nav>
-    </header>
-
-    <main role="main">
-      <div class="container players">
+{% block container%}
+  {% load static %}
+  <div class="container players">
         <div class="row">
-        {% for match in matches %}
-          <div class="col-sm-12 player">
+          <div class="col-sm-6">
             <div class="row">
-              <div class="col-sm-3">{{ match.tourney_name }}</div>
-              <div class="col-sm-3">{{ match.winner_name }}</div>
-              <div class="col-sm-3">{{ match.loser_name }}</div>
-              <div class="col-sm-2">{{ match.result }}</div>
-              <div class="col-sm-1">{{ match.tourney_date }}</div>
+              <div class="col-sm-2">
+                <img width="100%%" src="{% static 'front/img/default.png' %}">
+              </div>
+              <div class="col-sm-10">
+                <h1>{{ player.name }} {{ player.surname }} <img src="{% static 'front/img/flags/'|add:player.nationality.code|add:'.png' %}" width="40px"></h1>
+              </div>  
+            </div>
+            <div class="row player-info">
+              <div class="col-sm-6"><b>Games played:</b> {{ total_matches }}</div>
+              <div class="col-sm-6"><b>Birthdate:</b> {{ player.birthday }}</div>
+              <div class="col-sm-6"><b>Hand:</b> {% if player.hand == 'R' %}Right{% else %}{% if player.hand == 'L' %}Left{% else %}Unknown{% endif %}{% endif %}</div>
+              <div class="col-sm-6"><b>Ranking ATP <small>({{ rank_date }})</small>:</b> {{ rank }} {% if rank > previous_rank %}<span style="color:red;"><span class="fa fa-chevron-down"></span> {{ diff_rank }}{% endif %}{% if rank < previous_rank %}<span style="color:green;"><span class="fa fa-chevron-up"></span> {{ diff_rank }}{% endif %}{% if rank == previous_rank %}<span style="color: grey"><span class="fa fa-equals"></span></span>{% endif %}</div>
+            </div>
+            <div class="row player-last-5-games">
+              <div class="col-sm-12">
+                <h4>Last 5 games</h4>
+                <table class="table table-sm table-hover table-striped">
+                  <thead>
+                    <th scope="col">Tourney</th>
+                    <th scope="col">Round</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Rival</th>
+                  </thead>
+                  <tbody>
+                {% for game in last5 %}
+                  <tr class="table-{% if 'false' in game|lower %}danger{% else %}success{% endif %}">
+                    <th scope="row">{{ game.tourney }}</th>
+                    <td>{{ game.round }}</td>
+                    <td>{{ game.result }}</td>
+                    <td>{{ game.rival }}</td>
+                  </tr>
+                {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
             </div>
           </div>
-        {% endfor %}
+          <div class="col-sm-6">
+            <div id="rankings">
+              <img src="{% static 'front/img/spinner.gif' %}">
+            </div>
+          </div>  
+        </div>
+        <div class="row">    
+          <div class="col-sm-12 tab-container">
+            <ul class="nav nav-tabs">
+              <li class="nav-item">
+                <a class="nav-link" id="honors-tab" data-toggle="tab" href="#honors" role="tab" aria-controls="honors" aria-selected="false" onclick="honors();"><span class="fa fa-trophy"></span> Honors</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="stats-tab" data-toggle="tab" href="#stats" role="tab" aria-controls="stats" aria-selected="false" onclick="stats();"><span class="fa fa-table"></span> Career Stats</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="game-by-game-tab" data-toggle="tab" href="#game-by-game" role="tab" aria-controls="stats" aria-selected="false" onclick="gameByGame();"><span class="fa fa-th-list"></span> Game by game</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="graphics-tab" data-toggle="tab" href="#graphics" role="tab" aria-controls="graphics" aria-selected="false" onclick="graphics();"><span class="fa fa-chart-bar"></span> Graphics</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="ranking-tab" data-toggle="tab" href="#ranking" role="tab" aria-controls="ranking" aria-selected="false"><span class="fa fa-chart-line"></span> Ranking</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="face-to-face-tab" data-toggle="tab" href="#face-to-face" role="tab" aria-controls="face-to-face" aria-selected="false" onclick="faceToFace();"><span class="fa fa-greater-than-equal"></span> Face to Face</a>
+              </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+              <div class="tab-pane fade" id="honors" role="tabpanel" aria-labelledby="home-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="data-visualization-honors" class="col-sm-12" style="display:none"></div>
+              </div>
+              <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="home-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="data-visualization-stats" class="col-sm-12" style="display:none"></div>
+              </div>
+              <div class="tab-pane fade" id="game-by-game" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="game-by-game-container">
+                  <div class="selectors-game-by-game">
+                    <label for="years">Year</label>
+                    <select onchange="refreshTourneys();" id="years" class="form-control"></select>
+                    <label for="tourney_selector">Tournament</label>
+                    <select onchange="refreshGames();" id="tourney_selector" class="form-control"></select>
+                  </div>
+                  <div class="row" id="game-table" style="display:none">
+                    <div class="col-sm-12 game-table-data"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="graphics" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div class="row">
+                  <div id="canvas-winRating" class="col-sm-6" style="display:none; margin-left: calc((100% - 700px) / 2)"></div>
+                </div>
+                <div class="row">
+                  <div id="canvas-acesPerGamePerSurface" class="col-sm-6" style="display:none; margin-left: calc((100% - 700px) / 2)"></div>
+                </div>
+                <div class="row">
+                  <div id="canvas-doubleFaultsPerGamePerSurface" class="col-sm-6" style="display:none; margin-left: calc((100% - 700px) / 2)"></div>
+                </div>
+                <div class="row">
+                  <div id="canvas-servicePointsPerGamePerSurface" class="col-sm-6" style="display:none; margin-left: calc((100% - 700px) / 2)"></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="ranking" role="tabpanel" aria-labelledby="contact-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                  <div id="data_visualization3" class="col-sm-12" style="display:none"></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="face-to-face" role="tabpanel" aria-labelledby="contact-tab">
+                <div class="col-sm-12 loader">
+                  <img src="{% static 'front/img/spinner.gif' %}">
+                </div>
+                <div id="face-to-face-container">
+                  <div class="selectors-face-to-face">
+                    <label for="rival">Select rival</label>
+                    <select onchange="refreshFaceToFace();" id="rival" class="form-control"></select>
+                  </div>
+                  <div class="row" id="game-face-to-face" style="display:none">
+                    <div id="face-to-face-div" class="col-sm-12" style="margin-left: calc((100% - 700px) / 2)"></div>
+                    <div class="col-sm-12 game-face-to-face-data"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="clear"></div>
+          </div> 
         </div>
       </div>
-      <script>
-      
-      </script>
+{% endblock %}
 
+{% block js %}
+  {{ block.super }}
+  <script src="{% static 'front/js/player/plotly_functions.js' %}"></script>
+  <script src="{% static 'front/js/player/rankings.js' %}"></script>
+  <script src="{% static 'front/js/player/graphics.js' %}"></script>
+<script>
+        function honors() {
+          loadHonors();
+        }
 
-      <!-- FOOTER -->
-      <footer class="container">
-        <p class="float-right"><a href="#">Back to top</a></p>
-        <p>&copy; 2017-2018 Company, Inc. &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
-      </footer>
-    </main>
+        function stats() {
+          loadStats();
+        }
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
-</html>
+        function gameByGame() {
+          loadYearAndTourneys();
+        }
+
+        function graphics() {
+          getWinsRating('{% url 'api.player.win_ratings' player.id %}');
+          getAcesPerGamePerSurface('{% url 'api.player.aces_per_game_per_surface' player.id %}');
+          getDoubleFaultsPerGamePerSurface('{% url 'api.player.double_faults_per_game_per_surface' player.id %}');
+          getServicePointsPerGamePerSurface('{% url 'api.player.service_points_per_game_per_surface' player.id %}');
+        }
+
+        function faceToFace() {
+          loadFaceToFace();
+        }
+
+        function showLoader(index) {
+            $("#" + index).css("display", "none");
+            $(".loader").show();
+        }
+
+        function showVisualization(index) {
+            $(".loader").hide();
+            $("#" + index).css("display", "block");
+        }
+
+        function loadHonors() {
+          showLoader('data-visualization-honors');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.honors' player.id %}',
+            'success': function(data) {
+              console.log(data);
+
+              var trophies = '<div class="row">';
+              Object.entries(data['trophies']).forEach(function(element, index, array) {
+                trophies += `
+                  <div class="col-sm-3 honor-trophy">
+                    ` + element[1]['name'] + `:<br>`;
+
+                for (let i = 0; i < element[1]['count']; i++) {
+                  trophies += `
+                    <label class="fa fa-trophy text-` + element[1]['label_color'] + `"></label>
+                  `
+                }
+
+                trophies += '</div>';
+              })
+
+              var finals = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col">Tourney</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Surface</th>
+                      <th scope="col">Result</th>
+                      <th scope="col">Rival</th>
+                      <th scope="col">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              Object.entries(data['finals']).forEach(function(element, index, array) {
+              console.log(element);
+                finals += `
+                  <tr>
+                    <th scope="row">` + element[1]['tourney'] + `</th>
+                    <td>` + element[1]['date'] + `</td>
+                    <td>` + element[1]['surface'] + `</td>
+                    <td>` + element[1]['result'] + `</td>
+                    <td>` + element[1]['rival'] + `</td>
+                    <td>` + element[1]['minutes'] + `</td>
+                  </div>
+                `;
+              })
+
+              finals += `</tbody></table>`;
+
+              $("#data-visualization-honors").html(trophies + finals);
+
+              showVisualization('data-visualization-honors');
+            }
+          })
+        }
+
+        function loadStats() {
+          showLoader('data-visualization-stats');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.stats' player.id %}',
+            'success': function(data) {
+              console.log(data);
+
+              var table = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="">#</th>
+                      <th scope="col" title="Total matches">M</th>
+                      <th scope="col" title="Wins">W</th>
+                      <th scope="col" title="Losses">L</th>
+                      <th scope="col" title="Win percentage">W%</th>
+                      <th scope="col" title="Aces per game">ApG</th>
+                      <th scope="col" title="Aces ratio">A%</th>
+                      <th scope="col" title="Double faults per game">DFpG</th>
+                      <th scope="col" title="Double faults ratio">DF%</th>
+                      <th scope="col" title="First services ratio">FS%</th>
+                      <th scope="col" title="First services won ratio">FSw%</th>
+                      <th scope="col" title="Second services ratio">SS%</th>
+                      <th scope="col" title="Break points played per game">BPpG</th>
+                      <th scope="col" title="Break points saved ratio">BPs%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              Object.entries(data).forEach(function(element, index, array) {
+                table += `
+                  <tr>
+                    <th scope="row">` + element[0] + `</th>
+                    <td>` + element[1]['matches'] + `</td>
+                    <td>` + element[1]['wins'] + `</td>
+                    <td>` + element[1]['losses'] + `</td>
+                    <td>` + element[1]['win_perc'] + `%</td>
+                    <td>` + element[1]['aces_per_game'] + `</td>
+                    <td>` + element[1]['aces_rate'] + `%</td>
+                    <td>` + element[1]['double_faults_per_game'] + `</td>
+                    <td>` + element[1]['double_faults_rate'] + `%</td>
+                    <td>` + element[1]['first_services_rate'] + `%</td>
+                    <td>` + element[1]['first_services_won_rate'] + `%</td>
+                    <td>` + element[1]['second_services_won_rate'] + `%</td>
+                    <td>` + element[1]['break_points_played_per_game'] + `</td>
+                    <td>` + element[1]['break_points_saved_ratio'] + `%</td>
+                  </tr>
+                `;
+              })
+
+              table += `</tbody></table>`
+
+              $("#data-visualization-stats").html(table);
+
+              showVisualization('data-visualization-stats');
+            }
+          })
+        }
+
+        var dataYearsAndTourneys = null;
+
+        function loadYearAndTourneys() {
+          showLoader('game-by-game-container');
+
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.years_and_tourneys' player.id %}',
+            'success': function(data) {
+              dataYearsAndTourneys = data;
+              var htmlYears = '<option value="0">Select one</select>';
+              Object.entries(data).forEach(function(element, index, array) {
+                htmlYears += '<option value="' + element[0] + '">' + element[0] + '</option>'
+              })
+              $(".selectors-game-by-game #years").html(htmlYears);
+
+              showVisualization('game-by-game-container');
+            }
+          })
+        }
+
+        function refreshTourneys() {
+          $("#tourney_selector").html("");
+          var year = $("#years").val();
+
+          if (year == "0") {
+            $(".selectors-game-by-game #tourney_selector").html('');
+            return;
+          }
+
+          var htmlTourneys = '<option value="0">Select one</select>';
+          console.log(year);
+          console.log(dataYearsAndTourneys);
+          Object.entries(dataYearsAndTourneys[year]).forEach(function(element, index, array) {
+            htmlTourneys += '<option value="' + element[1]['tourney_id'] + '">' + element[1]['name'] + ' (' + element[1]['surface'] + ')</option>'
+          });
+          $(".selectors-game-by-game #tourney_selector").html(htmlTourneys);
+        }
+
+        function refreshGames() {
+          showLoader('game-table');
+
+          var tourney = $("#tourney_selector").val();
+
+          if (tourney == "0") {
+            $(".game-table-data").html("");
+            showVisualization('game-table');
+
+            return;
+          }
+
+          $.ajax({
+            'type': 'post',
+            'url': '{% url 'api.player.game_by_game' player.id %}',
+            'data': 'tourney=' + tourney,
+            'success': function(data) {
+              console.log(data);
+
+              var table = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="Round">#</th>
+                      <th scope="col" title="Rival">Rival</th>
+                      <th scope="col" title="Duration"><i class="fa fa-clock"></i></th>
+                      <th scope="col" title="Result">R</th>
+                      <th scope="col" title="Aces">A</th>
+                      <th scope="col" title="Double faults">DF</th>
+                      <th scope="col" title="Service points">SP</th>
+                      <th scope="col" title="First services">FS</th>
+                      <th scope="col" title="First services won">FSw</th>
+                      <th scope="col" title="Second services won">SSw</th>
+                      <th scope="col" title="Service games won">SGw</th>
+                      <th scope="col" title="Break points saved">BPs</th>
+                      <th scope="col" title="Break points played">BPp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              Object.entries(data).forEach(function(element, index, array) {
+                var label = 'danger';
+                if (element[1]['is_winner']) {
+                  label = 'success';
+                }
+
+                table += `
+                  <tr class="table-` + label + `">
+                    <th scope="row">` + element[1]['round'] + `</th>
+                    <td>` + element[1]['rival'] + `</td>
+                    <td>` + element[1]['minutes'] + ` min</td>
+                    <td>` + element[1]['result'] + `</td>
+                    <td>` + element[1]['aces'] + `</td>
+                    <td>` + element[1]['double_faults'] + `</td>
+                    <td>` + element[1]['service_points'] + `</td>
+                    <td>` + element[1]['first_services'] + `</td>
+                    <td>` + element[1]['first_services_won'] + `</td>
+                    <td>` + element[1]['second_services_won'] + `</td>
+                    <td>` + element[1]['service_game_won'] + `</td>
+                    <td>` + element[1]['break_points_saved'] + `</td>
+                    <td>` + element[1]['break_points_played'] + `</td>
+                  </tr>
+                `;
+              })
+
+              table += `</tbody></table>`
+
+              $(".game-table-data").html(table);
+
+              showVisualization('game-table');
+            }
+          })
+        }
+
+        var dataFaceToFace = null;
+
+        function loadFaceToFace() {
+          showLoader('face-to-face-container');
+
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.rivals' player.id %}',
+            'success': function(data) {
+              dataFaceToFace = data;
+              var htmlRivals = '<option value="0">Select one</select>';
+              Object.entries(data).forEach(function(element, index, array) {
+                htmlRivals += '<option value="' + element[1]['id'] + '">' + element[1]['rival'] + ' (' + element[1]['games'] + ' games)</option>'
+              })
+              $(".selectors-face-to-face #rival").html(htmlRivals);
+
+              showVisualization('face-to-face-container');
+            }
+          })
+        }
+
+        function refreshFaceToFace() {
+          showLoader('game-face-to-face');
+
+          var rival = $("#rival").val();
+
+          if (rival == "0") {
+            $(".game-face-to-face-data").html("");
+            showVisualization('game-face-to-face');
+
+            return;
+          }
+
+          $.ajax({
+            'type': 'post',
+            'url': '{% url 'api.player.face_to_face' player.id %}',
+            'data': 'rival=' + rival,
+            'success': function(data) {
+              console.log(data);
+
+              drawComparativePiramid(data['stats']);
+
+              var table = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="Tourney">Tourney</th>
+                      <th scope="col" title="Date">Date</th>
+                      <th scope="col" title="Round">Rnd</th>
+                      <th scope="col" title="Duration"><i class="fa fa-clock"></i></th>
+                      <th scope="col" title="Result">R</th>
+                      <th scope="col" title="Aces">A</th>
+                      <th scope="col" title="Double faults">DF</th>
+                      <th scope="col" title="Service points">SP</th>
+                      <th scope="col" title="First services">FS</th>
+                      <th scope="col" title="First services won">FSw</th>
+                      <th scope="col" title="Second services won">SSw</th>
+                      <th scope="col" title="Service games won">SGw</th>
+                      <th scope="col" title="Break points saved">BPs</th>
+                      <th scope="col" title="Break points played">BPp</th>
+                      <th scope="col" title="Rival Aces">rA</th>
+                      <th scope="col" title="Rival Double faults">rDF</th>
+                      <th scope="col" title="Rival Service points">rSP</th>
+                      <th scope="col" title="Rival First services">rFS</th>
+                      <th scope="col" title="Rival First services won">rFSw</th>
+                      <th scope="col" title="Rival Second services won">rSSw</th>
+                      <th scope="col" title="Rival Service games won">rSGw</th>
+                      <th scope="col" title="Rival Break points saved">rBPs</th>
+                      <th scope="col" title="Rival Break points played">rBPp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              Object.entries(data['matches']).forEach(function(element, index, array) {
+                console.log(element);
+                var label = 'danger';
+                if (element[1]['is_winner']) {
+                  label = 'success';
+                }
+
+                table += `
+                  <tr class="table-` + label + `">
+                    <th scope="row">` + element[1]['tourney'] + `</th>
+                    <td>` + element[1]['date'] + `</td>
+                    <td>` + element[1]['round'] + `</td>
+                    <td>` + element[1]['minutes'] + ` min</td>
+                    <td>` + element[1]['result'] + `</td>
+                    <td>` + element[1]['aces'] + `</td>
+                    <td>` + element[1]['double_faults'] + `</td>
+                    <td>` + element[1]['service_points'] + `</td>
+                    <td>` + element[1]['first_services'] + `</td>
+                    <td>` + element[1]['first_services_won'] + `</td>
+                    <td>` + element[1]['second_services_won'] + `</td>
+                    <td>` + element[1]['service_game_won'] + `</td>
+                    <td>` + element[1]['break_points_saved'] + `</td>
+                    <td>` + element[1]['break_points_played'] + `</td>
+                    <td>` + element[1]['rival_aces'] + `</td>
+                    <td>` + element[1]['rival_double_faults'] + `</td>
+                    <td>` + element[1]['rival_service_points'] + `</td>
+                    <td>` + element[1]['rival_first_services'] + `</td>
+                    <td>` + element[1]['rival_first_services_won'] + `</td>
+                    <td>` + element[1]['rival_second_services_won'] + `</td>
+                    <td>` + element[1]['rival_service_game_won'] + `</td>
+                    <td>` + element[1]['rival_break_points_saved'] + `</td>
+                    <td>` + element[1]['rival_break_points_played'] + `</td>
+                  </tr>
+                `;
+              })
+
+              table += `</tbody></table>`
+
+              $(".game-face-to-face-data").html(table);
+
+              showVisualization('game-face-to-face');
+            }
+          })
+        }
+
+        function drawComparativePiramid(data) {
+          trace1 = {
+            uid: '9f2de8e2-01e2-44cf-9597-d8c9d17a223a',
+            meta: {columnNames: {
+                x: 'Men, x',
+                y: 'Men, y; Women, y'
+              }},
+            name: data['player_name'],
+            type: 'bar',
+            x: [data['wins'], data['max_win_streak'], data['aces'], data['double_faults'], data['service_points'], data['first_services'], data['first_services_won'], data['second_services_won'], data['service_game_won'], data['break_points_saved'], data['break_points_played']],
+            y: [0,1,2,3,4,5,6,7,8,9,10],
+            marker: {color: 'powderblue'},
+            text: [data['wins'] + ' wins', data['max_win_streak'] + ' max win streaks', data['aces'] + ' aces per game', data['double_faults'] + ' double faults per game', data['service_points'] + ' service points per game', data['first_services'] + ' first services per game', data['first_services_won'] + ' first services won per game', data['second_services_won'] + ' second services won per game', data['service_game_won'] + ' service games won per game', data['break_points_saved'] + ' break points saved per game', data['break_points_played'] + ' break points played per game'],
+            hoverinfo: 'text',
+            orientation: 'h'
+          };
+          trace2 = {
+            uid: '31653fd0-228e-4932-88af-340740cd1dea',
+            meta: {columnNames: {
+                x: 'Women, x',
+                y: 'Men, y; Women, y',
+                text: 'text'
+              }},
+            name: data['rival_name'],
+            type: 'bar',
+            x: [-data['rival_wins'], -data['max_loss_streak'], -data['rival_aces'], -data['rival_double_faults'], -data['rival_service_points'], -data['rival_first_services'], -data['rival_first_services_won'], -data['rival_second_services_won'], -data['rival_service_game_won'], -data['rival_break_points_saved'], -data['rival_break_points_played']],
+            y: [0,1,2,3,4,5,6,7,8,9,10],
+            marker: {color: 'seagreen'},
+            text: [data['rival_wins'] + ' wins', data['max_loss_streak'] + ' max win streaks', data['rival_aces'] + ' aces per game', data['rival_double_faults'] + ' double faults per game', data['rival_service_points'] + ' service points per game', data['rival_first_services'] + ' first services per game', data['rival_first_services_won'] + ' first services won per game', data['rival_second_services_won'] + ' second services won per game', data['rival_service_game_won'] + ' service games won per game', data['rival_break_points_saved'] + ' break points saved per game', data['rival_break_points_played'] + ' break points played per game'],
+            hoverinfo: 'text',
+            orientation: 'h'
+          };
+          data = [trace1, trace2];
+          layout = {
+            xaxis: {
+              type: 'linear',
+              //range: [-20, 20],
+              title: {text: 'Number'},
+            },
+            yaxis: {
+              type: 'linear',
+              range: [0, 10],
+              ticktext: ['wins', 'max wins streak', 'aces', 'double faults', 'service points', 'first services', 'first services won', 'second services won', 'service game won', 'break points saved', 'break points played'],
+              tickvals: [10,9,8,7,6,5,4,3,2,1,0],
+              title: {text: ''},
+              autorange: true
+            },
+            bargap: 0.1,
+            barmode: 'relative',
+            autosize: true
+          };
+          Plotly.plot('face-to-face-div', {
+            data: data,
+            layout: layout
+          });
+        }
+
+        getRankings('{% url 'api.player.rankings' player.id %}');
+       </script>
+{% endblock %}
