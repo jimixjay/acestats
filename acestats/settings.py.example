@@ -78,45 +78,15 @@ WSGI_APPLICATION = 'acestats.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    #'default': {
-    #    'ENGINE': 'django_cassandra_engine',
-    #    'NAME': 'development',
-    #    'TEST_NAME': 'test_db', 
-    #    'USER_NAME':'cassandra',
-    #    'PASSWORD': 'cassandra',
-    #    'HOST': '82.223.111.168',
-    #    'PORT': '9042',
-    #    'OPTIONS': {
-    #        'replication': {
-    #            'strategy_class': 'SimpleStrategy',
-    #            'replication_factor': 1
-    #        }
-    #    }
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': 'ciceMasterpSqL',
+        'PASSWORD': 'TUPASSWORD',
         'HOST': '127.0.0.1',
-        'PORT': '5433',
+        'PORT': 'TUPUERTO (default 5432)',
     }
 }
-
-CASSANDRA_DRIVER_KWARGS = {
-    'protocol_version': 4
-}
-
-#    {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'postgres',
-#        'USER': 'postgres',
-#        'PASSWORD': 'postgres',
-#        'HOST': 'db',
-#        'PORT': 5432,
-#    }
-#}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
