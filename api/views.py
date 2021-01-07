@@ -8,6 +8,35 @@ from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
+@csrf_exempt
+def search(request):
+    value = request.POST.get('value', '')
+    cursor = connection.cursor()
+
+    values = value.split()
+
+    key = 0
+    for value in values:
+        #values[key] = "'" + value + "'"
+        key += 1
+
+    query = """
+                    SELECT p.id, CONCAT(p.name, ' ', p.surname)
+                    FROM front_player p
+                    WHERE p.name ~* '""" + '|'.join(values) + """'
+                    OR p.surname ~* '""" + '|'.join(values) + """'
+                    ORDER BY p.surname ASC
+                    LIMIT 10
+                """
+
+
+
+    cursor.execute(query)
+
+    data = namedtuplefetchall(cursor)
+
+    return JsonResponse(data, safe=False)
+
 def player_honors(request, id):
     cursor = connection.cursor()
 
@@ -342,6 +371,162 @@ def player_rivals(request, id):
 
     return JsonResponse(data, safe=False)
 
+def player_ranking_tab(request, id):
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT current_rank.rank AS current_rank, current_rank.points AS current_points,
+        			best_rank.rank AS best_rank, CONCAT(best_rank.year, '-', best_rank.month) AS best_rank_date,
+        			best_points.points AS best_points, CONCAT(best_points.year, '-', best_points.month) AS best_points_date,
+        			most_repeated_rank.rank AS most_repeated_rank, most_repeated_rank.total AS most_repeated_rank_total,
+        			most_repeated_rank_year.rank AS most_repeated_rank_year, most_repeated_rank_year.total AS most_repeated_rank_year_total,
+        			rank_totals.rank1 AS rank_top_1, rank_totals.rank5 AS rank_top_5, rank_totals.rank10 AS rank_top_10, rank_totals.rank20 AS rank_top_20, rank_totals.rank50 AS rank_top_50, rank_totals.rank100 AS rank_top_100,
+        			rank_totals_year.rank1 AS rank_top_year_1, rank_totals_year.rank5 AS rank_top_year_5, rank_totals_year.rank10 AS rank_top_year_10, rank_totals_year.rank20 AS rank_top_year_20, rank_totals_year.rank50 AS rank_top_year_50, rank_totals_year.rank100 AS rank_top_year_100
+                FROM front_player p
+        		  INNER JOIN (SELECT player_id, rank, points
+        							FROM front_ranking
+        							WHERE player_id = """ + id + """
+        							ORDER BY DATE DESC LIMIT 1) current_rank ON current_rank.player_id = p.id
+        		  INNER JOIN (SELECT player_id, rank, points, EXTRACT(YEAR FROM date) as year, EXTRACT(MONTH FROM date) as month
+        							FROM front_ranking
+        							WHERE player_id = """ + id + """
+        							ORDER BY rank ASC, DATE ASC LIMIT 1) best_rank ON best_rank.player_id = p.id
+        		  INNER JOIN (SELECT player_id, points, EXTRACT(YEAR FROM date) as year, EXTRACT(MONTH FROM date) as month
+        							FROM front_ranking
+        							WHERE player_id = """ + id + """
+        							ORDER BY points DESC, DATE ASC LIMIT 1) best_points ON best_points.player_id = p.id
+        		  INNER JOIN (SELECT player_id, rank, total FROM (
+        							SELECT player_id, rank, COUNT(*) AS total
+        							FROM front_ranking
+        							WHERE player_id = """ + id + """
+        							GROUP BY player_id, rank
+        							ORDER BY total DESC, rank ASC) t
+        							LIMIT 1) most_repeated_rank ON most_repeated_rank.player_id = p.id
+        		  INNER JOIN (SELECT player_id, rank, total FROM (
+        							SELECT player_id, rank, COUNT(*) AS total
+        							FROM (SELECT player_id, max(EXTRACT('month' FROM r.date)) AS month, rank, EXTRACT('year' from r.date) as YEAR
+        								FROM front_ranking r
+        								INNER JOIN (SELECT DATE_PART('year', DATE) AS year, MAX(DATE) AS max_date FROM front_ranking WHERE player_id = """ + id + """ GROUP BY 1) r2 ON r.date = r2.max_date
+        								WHERE player_id = """ + id + """
+        								GROUP BY 1, 3, 4) t
+        							WHERE player_id = """ + id + """
+        							GROUP BY player_id, rank
+        							ORDER BY total DESC, rank ASC) t
+        							LIMIT 1) most_repeated_rank_year ON most_repeated_rank_year.player_id = p.id
+        		  INNER JOIN (with ranks AS (
+        							SELECT front_ranking.player_id,
+        								CASE WHEN rank = 1 THEN 1
+        								WHEN rank <= 5 THEN 5
+        								WHEN rank <= 10 THEN 10
+        								WHEN rank <= 20 THEN 20
+        								WHEN rank <= 50 THEN 50
+        								WHEN rank <= 100 THEN 100 END AS rank,
+        								COUNT(*) AS total
+        							FROM front_ranking
+        							WHERE player_id = """ + id + """ AND rank<=100
+        							GROUP BY player_id, CASE WHEN rank = 1 THEN 1
+        								WHEN rank <= 5 THEN 5
+        								WHEN rank <= 10 THEN 10
+        								WHEN rank <= 20 THEN 20
+        								WHEN rank <= 50 THEN 50
+        								WHEN rank <= 100 THEN 100 END
+        						)
+        						SELECT player_id, SUM(rank1) AS rank1, SUM(rank5 + rank1) AS rank5, SUM(rank10 + rank5 + rank1) AS rank10, SUM(rank20 + rank10 + rank5 + rank1) AS rank20, SUM(rank50 + rank20 + rank10 + rank5 + rank1) AS rank50, SUM(rank100 + rank50 + rank20 + rank10 + rank5 + rank1) AS rank100
+        						FROM(
+        							SELECT rank1.player_id, rank1.total AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=1) AS rank1
+        							UNION
+        							SELECT rank5.player_id, 0 AS rank1, rank5.total AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=5) AS rank5
+        							UNION
+        							SELECT rank10.player_id, 0 AS rank1, 0 AS rank5, rank10.total AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=10) AS rank10
+        							UNION
+        							SELECT rank20.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, rank20.total AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=20) AS rank20
+        							UNION
+        							SELECT rank50.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, rank50.total AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=50) AS rank50
+        							UNION
+        							SELECT rank100.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, rank100.total AS rank100
+        							FROM (SELECT * from ranks WHERE rank=100) AS rank100
+        						) AS t
+        						GROUP BY player_id) rank_totals ON rank_totals.player_id = p.id
+        		  INNER JOIN (with ranks AS (
+        							SELECT t.player_id,
+        								CASE WHEN rank = 1 THEN 1
+        								WHEN rank <= 5 THEN 5
+        								WHEN rank <= 10 THEN 10
+        								WHEN rank <= 20 THEN 20
+        								WHEN rank <= 50 THEN 50
+        								WHEN rank <= 100 THEN 100 END AS rank,
+        								COUNT(*) AS total
+        							FROM (SELECT player_id, max(EXTRACT('month' FROM r.date)) AS month, rank, EXTRACT('year' from r.date) as YEAR
+        														FROM front_ranking r
+        														INNER JOIN (SELECT DATE_PART('year', DATE) AS year, MAX(DATE) AS max_date FROM front_ranking WHERE player_id = """ + id + """ GROUP BY 1) r2 ON r.date = r2.max_date
+        														WHERE player_id = """ + id + """
+        														GROUP BY 1, 3, 4) t
+        							WHERE player_id = """ + id + """ AND rank<=100
+        							GROUP BY player_id, CASE WHEN rank = 1 THEN 1
+        								WHEN rank <= 5 THEN 5
+        								WHEN rank <= 10 THEN 10
+        								WHEN rank <= 20 THEN 20
+        								WHEN rank <= 50 THEN 50
+        								WHEN rank <= 100 THEN 100 END
+        						)
+        						SELECT player_id, SUM(rank1) AS rank1, SUM(rank5 + rank1) AS rank5, SUM(rank10 + rank5 + rank1) AS rank10, SUM(rank20 + rank10 + rank5 + rank1) AS rank20, SUM(rank50 + rank20 + rank10 + rank5 + rank1) AS rank50, SUM(rank100 + rank50 + rank20 + rank10 + rank5 + rank1) AS rank100
+        						FROM(
+        							SELECT rank1.player_id, rank1.total AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=1) AS rank1
+        							UNION
+        							SELECT rank5.player_id, 0 AS rank1, rank5.total AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=5) AS rank5
+        							UNION
+        							SELECT rank10.player_id, 0 AS rank1, 0 AS rank5, rank10.total AS rank10, 0 AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=10) AS rank10
+        							UNION
+        							SELECT rank20.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, rank20.total AS rank20, 0 AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=20) AS rank20
+        							UNION
+        							SELECT rank50.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, rank50.total AS rank50, 0 AS rank100
+        							FROM (SELECT * from ranks WHERE rank=50) AS rank50
+        							UNION
+        							SELECT rank100.player_id, 0 AS rank1, 0 AS rank5, 0 AS rank10, 0 AS rank20, 0 AS rank50, rank100.total AS rank100
+        							FROM (SELECT * from ranks WHERE rank=100) AS rank100
+        						) AS t
+        						GROUP BY player_id) rank_totals_year ON rank_totals_year.player_id = p.id
+        		  WHERE p.id = """ + id + """;""")
+
+    rows = namedtuplefetchall(cursor)
+
+    data = {}
+    for row in rows:
+        data['current_rank'] = row.current_rank
+        data['current_points'] = row.current_points
+        data['best_rank'] = row.best_rank
+        data['best_rank_date'] = row.best_rank_date
+        data['best_points'] = row.best_points
+        data['best_points_date'] = row.best_points_date
+        data['most_repeated_rank'] = row.most_repeated_rank
+        data['most_repeated_rank_total'] = row.most_repeated_rank_total
+        data['most_repeated_rank_year'] = row.most_repeated_rank_year
+        data['most_repeated_rank_year_total'] = row.most_repeated_rank_year_total
+        data['rank_top_1'] = row.rank_top_1
+        data['rank_top_5'] = row.rank_top_5
+        data['rank_top_10'] = row.rank_top_10
+        data['rank_top_20'] = row.rank_top_20
+        data['rank_top_50'] = row.rank_top_50
+        data['rank_top_100'] = row.rank_top_100
+        data['rank_top_year_1'] = row.rank_top_year_1
+        data['rank_top_year_5'] = row.rank_top_year_5
+        data['rank_top_year_10'] = row.rank_top_year_10
+        data['rank_top_year_20'] = row.rank_top_year_20
+        data['rank_top_year_50'] = row.rank_top_year_50
+        data['rank_top_year_100'] = row.rank_top_year_100
+
+    return JsonResponse(data, safe=False)
+
+
 @csrf_exempt
 def player_face_to_face(request, id):
     cursor = connection.cursor()
@@ -418,6 +603,8 @@ def player_face_to_face(request, id):
             else:
                 current_loss_streak = 0
                 current_win_streak = 1
+                if max_win_streak == 0:
+                    max_win_streak = 1
         else:
             if current_loss_streak > 0:
                 current_loss_streak += 1
@@ -426,6 +613,8 @@ def player_face_to_face(request, id):
             else:
                 current_win_streak = 0
                 current_loss_streak = 1
+                if max_loss_streak == 0:
+                    max_loss_streak = 1
 
     data['matches'] = matches
     #assert False, (data['matches'],)

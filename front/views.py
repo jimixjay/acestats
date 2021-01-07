@@ -189,7 +189,15 @@ def player(request, id):
     for game in games:
         last5.append({'tourney': game.tourney, 'round': game.round, 'result': game.result, 'rival': game.rival, 'is_winner': game.is_winner})
 
-    return render(request, 'player.html', {'rank': rank[0], 'rank_date': rank[1], 'previous_rank': previous_rank[0], 'diff_rank': abs(rank[0] - previous_rank[0]), 'player': player, 'total_matches': total, 'last5': last5})
+    return render(request, 'player.html', {
+        'rank': rank[0] if rank else 'NA',
+        'rank_date': rank[1] if rank else 'NA',
+        'previous_rank': previous_rank[0] if previous_rank else 'NA',
+        'diff_rank': abs(rank[0] - previous_rank[0]) if rank and previous_rank else 'NA',
+        'player': player,
+        'total_matches': total,
+        'last5': last5
+    })
 
 def refresh_matches(request):
     totals = IngestMatchesService.execute({})

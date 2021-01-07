@@ -13,15 +13,15 @@ class IngestRankingsService(services.Service):
 
         for decade in ['90s', '00s', '10s', 'current']:
             csv_file = pd.read_csv(
-                'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_rankings_' + decade + '.csv', header=1, names=['date', 'rank', 'player_id', 'points'])
-            
+                'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_rankings_' + decade + '.csv', header=None, names=['date', 'rank', 'player_id', 'points'])
+
             for row in csv_file[csv_file['rank'] < 500].itertuples():
                 date = datetime.datetime.strptime(str(int(row.date)), '%Y%m%d').date()
                 current_month = str(date.year) + str(date.month)
         
                 id = str(current_month) + '-' + str(row.player_id)    
                 ranking = Ranking.objects.filter(id=id)
-                        
+
                 if (not ranking):                    
                     player = Player.objects.filter(id=row.player_id)                        
 

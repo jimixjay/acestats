@@ -66,7 +66,7 @@
                 <a class="nav-link" id="graphics-tab" data-toggle="tab" href="#graphics" role="tab" aria-controls="graphics" aria-selected="false" onclick="graphics();"><span class="fa fa-chart-bar"></span> Graphics</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" id="ranking-tab" data-toggle="tab" href="#ranking" role="tab" aria-controls="ranking" aria-selected="false"><span class="fa fa-chart-line"></span> Ranking</a>
+                <a class="nav-link" id="ranking-tab" data-toggle="tab" href="#ranking" role="tab" aria-controls="ranking" aria-selected="false" onclick="ranking();"><span class="fa fa-chart-line"></span> Ranking</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" id="face-to-face-tab" data-toggle="tab" href="#face-to-face" role="tab" aria-controls="face-to-face" aria-selected="false" onclick="faceToFace();"><span class="fa fa-greater-than-equal"></span> Face to Face</a>
@@ -121,8 +121,8 @@
               <div class="tab-pane fade" id="ranking" role="tabpanel" aria-labelledby="contact-tab">
                 <div class="col-sm-12 loader">
                   <img src="{% static 'front/img/spinner.gif' %}">
-                  <div id="data_visualization3" class="col-sm-12" style="display:none"></div>
                 </div>
+                <div id="data-visualization-ranking" class="col-sm-12" style="display:none"></div>
               </div>
               <div class="tab-pane fade" id="face-to-face" role="tabpanel" aria-labelledby="contact-tab">
                 <div class="col-sm-12 loader">
@@ -134,7 +134,7 @@
                     <select onchange="refreshFaceToFace();" id="rival" class="form-control"></select>
                   </div>
                   <div class="row" id="game-face-to-face" style="display:none">
-                    <div id="face-to-face-div" class="col-sm-12" style="margin-left: calc((100% - 700px) / 2)"></div>
+                    <div id="face-to-face-div" class="col-sm-12" style="margin-left: calc((100% - 700px) / 2);margin-top:5px;"></div>
                     <div class="col-sm-12 game-face-to-face-data"></div>
                   </div>
                 </div>
@@ -169,6 +169,10 @@
           getAcesPerGamePerSurface('{% url 'api.player.aces_per_game_per_surface' player.id %}');
           getDoubleFaultsPerGamePerSurface('{% url 'api.player.double_faults_per_game_per_surface' player.id %}');
           getServicePointsPerGamePerSurface('{% url 'api.player.service_points_per_game_per_surface' player.id %}');
+        }
+
+        function ranking() {
+          loadRanking();
         }
 
         function faceToFace() {
@@ -418,6 +422,140 @@
           })
         }
 
+        function loadRanking() {
+          showLoader('data-visualization-ranking');
+          $.ajax({
+            'type': 'get',
+            'url': '{% url 'api.player.ranking_tab' player.id %}',
+            'success': function(data) {
+              console.log(data);
+
+              var tableInfo = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="" colspan="2">Ranking highlights</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Current Rank</th>
+                      <td>` + data['current_rank'] + ` (` + data['current_points'] + `)</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Best Rank</th>
+                      <td>` + data['best_rank'] + ` (` + data['best_rank_date'] + `)</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Most Rank Points</th>
+                      <td>` + data['best_points'] + ` (` + data['best_points_date'] + `)</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Most Frequent Rank</th>
+                      <td>` + data['most_repeated_rank'] + ` (` + data['most_repeated_rank_total'] + ` months)</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Most Frequent Year-End Rank</th>
+                      <td>` + data['most_repeated_rank_year'] + ` (` + data['most_repeated_rank_year_total'] + ` years)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+
+              var tableMonths = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="" colspan="2">Months</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">At number 1</th>
+                      <td>` + data['rank_top_1'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 5</th>
+                      <td>` + data['rank_top_5'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 10</th>
+                      <td>` + data['rank_top_10'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 20</th>
+                      <td>` + data['rank_top_20'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 50</th>
+                      <td>` + data['rank_top_50'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 100</th>
+                      <td>` + data['rank_top_100'] + `</td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+              var tableYears = `
+                <table class="table table-sm table-hover table-striped" style="margin-top: 20px">
+                  <thead>
+                    <tr>
+                      <th scope="col" title="" colspan="2">Years</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">At number 1</th>
+                      <td>` + data['rank_top_year_1'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 5</th>
+                      <td>` + data['rank_top_year_5'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 10</th>
+                      <td>` + data['rank_top_year_10'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 20</th>
+                      <td>` + data['rank_top_year_20'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 50</th>
+                      <td>` + data['rank_top_year_50'] + `</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">In top 100</th>
+                      <td>` + data['rank_top_year_100'] + `</td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+
+              var html = `
+                <div class="row">
+                  <div class="col-sm-8">
+                    ` + tableInfo + `
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="col-sm-12">
+                      ` + tableMonths + `
+                    </div>
+                    <div class="col-sm-12">
+                      ` + tableYears + `
+                    </div>
+                  </div>
+                </div>
+              `;
+
+              $("#data-visualization-ranking").html(html);
+
+              showVisualization('data-visualization-ranking');
+            }
+          })
+        }
+
         var dataFaceToFace = null;
 
         function loadFaceToFace() {
@@ -537,6 +675,83 @@
         }
 
         function drawComparativePiramid(data) {
+          var wins = data['wins'];
+          var rival_wins = data['rival_wins'];
+          var total = wins + rival_wins;
+
+          wins = wins * 100 / total;
+          rival_wins = rival_wins * 100 / total;
+
+          var max_win_streak = data['max_win_streak'];
+          var rival_max_win_streak = data['max_loss_streak'];
+          total = max_win_streak + rival_max_win_streak;
+
+          max_win_streak = max_win_streak * 100 / total;
+          rival_max_win_streak = rival_max_win_streak * 100 / total;
+
+          var aces = data['aces_per_game'];
+          var rival_aces = data['rival_aces_per_game'];
+          total = aces + rival_aces;
+
+          aces = aces * 100 / total;
+          rival_aces = rival_aces * 100 / total;
+
+          var double_faults = data['double_faults'];
+          var rival_double_faults = data['rival_double_faults'];
+          total = double_faults + rival_double_faults;
+
+          double_faults = double_faults * 100 / total;
+          rival_double_faults = rival_double_faults * 100 / total;
+
+          var service_points = data['service_points'];
+          var rival_service_points = data['rival_service_points'];
+          total = service_points + rival_service_points;
+
+          service_points = service_points * 100 / total;
+          rival_service_points = rival_service_points * 100 / total;
+
+          var first_services = data['first_services'];
+          var rival_first_services = data['rival_first_services'];
+          total = first_services + rival_first_services;
+
+          first_services = first_services * 100 / total;
+          rival_first_services = rival_first_services * 100 / total;
+
+          var first_services_won = data['first_services_won'];
+          var rival_first_services_won = data['rival_first_services_won'];
+          total = first_services_won + rival_first_services_won;
+
+          first_services_won = first_services_won * 100 / total;
+          rival_first_services_won = rival_first_services_won * 100 / total;
+
+          var second_services_won = data['second_services_won'];
+          var rival_second_services_won = data['rival_second_services_won'];
+          total = second_services_won + rival_second_services_won;
+
+          second_services_won = second_services_won * 100 / total;
+          rival_second_services_won = rival_second_services_won * 100 / total;
+
+          var service_game_won = data['service_game_won'];
+          var rival_service_game_won = data['rival_service_game_won'];
+          total = service_game_won + rival_service_game_won;
+
+          service_game_won = service_game_won * 100 / total;
+          rival_service_game_won = rival_service_game_won * 100 / total;
+
+          var break_points_saved = data['break_points_saved'];
+          var rival_break_points_saved = data['rival_break_points_saved'];
+          total = break_points_saved + rival_break_points_saved;
+
+          break_points_saved = break_points_saved * 100 / total;
+          rival_break_points_saved = rival_break_points_saved * 100 / total;
+
+          var break_points_played = data['break_points_played'];
+          var rival_break_points_played = data['rival_break_points_played'];
+          total = break_points_played + rival_break_points_played;
+
+          break_points_played = break_points_played * 100 / total;
+          rival_break_points_played = rival_break_points_played * 100 / total;
+
           trace1 = {
             uid: '9f2de8e2-01e2-44cf-9597-d8c9d17a223a',
             meta: {columnNames: {
@@ -545,10 +760,10 @@
               }},
             name: data['player_name'],
             type: 'bar',
-            x: [data['wins'], data['max_win_streak'], data['aces'], data['double_faults'], data['service_points'], data['first_services'], data['first_services_won'], data['second_services_won'], data['service_game_won'], data['break_points_saved'], data['break_points_played']],
-            y: [0,1,2,3,4,5,6,7,8,9,10],
-            marker: {color: 'powderblue'},
-            text: [data['wins'] + ' wins', data['max_win_streak'] + ' max win streaks', data['aces'] + ' aces per game', data['double_faults'] + ' double faults per game', data['service_points'] + ' service points per game', data['first_services'] + ' first services per game', data['first_services_won'] + ' first services won per game', data['second_services_won'] + ' second services won per game', data['service_game_won'] + ' service games won per game', data['break_points_saved'] + ' break points saved per game', data['break_points_played'] + ' break points played per game'],
+            x: [-wins, -max_win_streak, -aces, -double_faults, -service_points, -first_services, -first_services_won, -second_services_won, -service_game_won, -break_points_saved, -break_points_played],
+            y: [10,9,8,7,6,5,4,3,2,1,0],
+            marker: {color: '#1b3c5d', size:16},
+            text: [data['wins'] + ' wins', data['max_win_streak'] + ' max win streaks', data['aces_per_game'].toFixed(2) + ' aces per game', data['double_faults'].toFixed(2) + ' double faults per game', data['service_points'].toFixed(2) + ' service points per game', data['first_services'].toFixed(2) + ' first services per game', data['first_services_won'].toFixed(2) + ' first services won per game', data['second_services_won'].toFixed(2) + ' second services won per game', data['service_game_won'].toFixed(2) + ' service games won per game', data['break_points_saved'].toFixed(2) + ' break points saved per game', data['break_points_played'].toFixed(2) + ' break points played per game'],
             hoverinfo: 'text',
             orientation: 'h'
           };
@@ -561,10 +776,10 @@
               }},
             name: data['rival_name'],
             type: 'bar',
-            x: [-data['rival_wins'], -data['max_loss_streak'], -data['rival_aces'], -data['rival_double_faults'], -data['rival_service_points'], -data['rival_first_services'], -data['rival_first_services_won'], -data['rival_second_services_won'], -data['rival_service_game_won'], -data['rival_break_points_saved'], -data['rival_break_points_played']],
-            y: [0,1,2,3,4,5,6,7,8,9,10],
-            marker: {color: 'seagreen'},
-            text: [data['rival_wins'] + ' wins', data['max_loss_streak'] + ' max win streaks', data['rival_aces'] + ' aces per game', data['rival_double_faults'] + ' double faults per game', data['rival_service_points'] + ' service points per game', data['rival_first_services'] + ' first services per game', data['rival_first_services_won'] + ' first services won per game', data['rival_second_services_won'] + ' second services won per game', data['rival_service_game_won'] + ' service games won per game', data['rival_break_points_saved'] + ' break points saved per game', data['rival_break_points_played'] + ' break points played per game'],
+            x: [rival_wins, rival_max_win_streak, rival_aces, rival_double_faults, rival_service_points, rival_first_services, rival_first_services_won, rival_second_services_won, rival_service_game_won, rival_break_points_saved, rival_break_points_played],
+            y: [10,9,8,7,6,5,4,3,2,1,0],
+            marker: {color: '#1c7ca2', size: 16},
+            text: [data['rival_wins'] + ' wins', data['max_loss_streak'] + ' max win streaks', data['rival_aces_per_game'].toFixed(2) + ' aces per game', data['rival_double_faults'].toFixed(2) + ' double faults per game', data['rival_service_points'].toFixed(2) + ' service points per game', data['rival_first_services'].toFixed(2) + ' first services per game', data['rival_first_services_won'].toFixed(2) + ' first services won per game', data['rival_second_services_won'].toFixed(2) + ' second services won per game', data['rival_service_game_won'].toFixed(2) + ' service games won per game', data['rival_break_points_saved'].toFixed(2) + ' break points saved per game', data['rival_break_points_played'].toFixed(2) + ' break points played per game'],
             hoverinfo: 'text',
             orientation: 'h'
           };
@@ -572,13 +787,14 @@
           layout = {
             xaxis: {
               type: 'linear',
-              //range: [-20, 20],
-              title: {text: 'Number'},
+              range: [-100, 100],
+              title: {text: 'Stats'},
+              showticklabels: false
             },
             yaxis: {
               type: 'linear',
               range: [0, 10],
-              ticktext: ['wins', 'max wins streak', 'aces', 'double faults', 'service points', 'first services', 'first services won', 'second services won', 'service game won', 'break points saved', 'break points played'],
+              ticktext: ['Wins', 'Win streak', 'Aces', 'Dbl faults', 'Serv points', '1st serv', '1st serv won', '2nd serv won', 'Serv g won', 'BPs saved', 'BPs played'],
               tickvals: [10,9,8,7,6,5,4,3,2,1,0],
               title: {text: ''},
               autorange: true
@@ -587,10 +803,7 @@
             barmode: 'relative',
             autosize: true
           };
-          Plotly.plot('face-to-face-div', {
-            data: data,
-            layout: layout
-          });
+          Plotly.newPlot('face-to-face-div', data, layout, {displayModeBar: false});
         }
 
         getRankings('{% url 'api.player.rankings' player.id %}');
