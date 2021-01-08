@@ -21,8 +21,15 @@ def search(request):
         key += 1
 
     query = """
-                    SELECT p.id, CONCAT(p.name, ' ', p.surname)
+                    SELECT p.id, CONCAT(p.name, ' ', p.surname), min_year, max_year
                     FROM front_player p
+                    INNER JOIN (
+                        SELECT player_id, MIN(EXTRACT(year from t.date)) AS min_year, MAX(EXTRACT(YEAR FROM t.date)) AS max_year
+                        FROM front_match_stats s
+                        INNER JOIN front_match m ON s.match_id = m.id
+                        INNER JOIN front_tourney t ON m.tourney_id = t.id
+                        GROUP BY player_id
+                    ) t ON p.id = t.player_id
                     WHERE p.name ~* '""" + '|'.join(values) + """'
                     OR p.surname ~* '""" + '|'.join(values) + """'
                     ORDER BY p.surname ASC

@@ -15,7 +15,7 @@ from front.services.ingest_matches_service import IngestMatchesService
 from front.services.ingest_rankings_service import IngestRankingsService
 
 def index(request):
-    return render(request, 'index.html')
+    return render(request, 'index.html', {'menu': 'home'})
 
 def players(request):
     page = request.GET.get('page', 1)
@@ -142,10 +142,10 @@ def players(request):
             players_complete.append(player_complete)
 
         players.object_list = players_complete
-        return render(request, 'players.html', {'total_players': paginator.count, 'players': players})
+        return render(request, 'players.html', {'total_players': paginator.count, 'players': players, 'menu': 'players'})
 
 def advance_stats(request):
-    return render(request, 'advance_stats.html')
+    return render(request, 'advance_stats.html', {'menu': 'interactive'})
 
 def namedtuplefetchall(cursor):
     "Return all rows from a cursor as a namedtuple"
@@ -196,8 +196,48 @@ def player(request, id):
         'diff_rank': abs(rank[0] - previous_rank[0]) if rank and previous_rank else 'NA',
         'player': player,
         'total_matches': total,
-        'last5': last5
+        'last5': last5,
+        'menu': 'players'
     })
+
+def predictions(request):
+    cursor = connection.cursor()
+
+    query = """
+        SELECT p.id, CONCAT(p.surname, ', ', p.name) as name
+        FROM front_player p
+        INNER JOIN (
+                                SELECT player_id
+                                FROM front_match_stats s
+                                INNER JOIN front_match m ON s.match_id = m.id
+                                INNER JOIN front_tourney t ON m.tourney_id = t.id
+                                GROUP BY player_id
+                                having MAX(EXTRACT(YEAR FROM t.date)) > 2015
+                            ) t ON p.id = t.player_id
+        ORDER BY p.surname ASC
+    """
+
+    cursor.execute(query)
+
+    players = namedtuplefetchall(cursor)
+
+    query = """
+        SELECT DISTINCT t.surface_id, s.name as surface, t.name
+        FROM front_tourney t
+        INNER JOIN front_surface s ON t.surface_id = s.id
+        WHERE t.tourney_level_id NOT IN (5)
+        ORDER BY t.name ASC
+    """
+
+    cursor.execute(query)
+
+    tourneys = namedtuplefetchall(cursor)
+
+    return render(request, 'predictions.html', {
+            'players': players,
+            'tourneys': tourneys,
+            'menu': 'predictions'
+        })
 
 def refresh_matches(request):
     totals = IngestMatchesService.execute({})
