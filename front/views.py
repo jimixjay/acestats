@@ -247,7 +247,7 @@ def refresh_matches(request):
 def refresh_players(request):
     totals = IngestPlayersService.execute({})
 
-    return HttpResponse("se han insertado " + str(totals['inserts']) + " jugadores y se han editado " + str(totals['updates']) + " jugadores. Han fallado " + str(totals['fails']) + " inserciones")
+    return HttpResponse("se han insertado " + str(totals['inserts']) + " jugadores y se han editado " + str(totals['updates']) + " jugadores")
 
 def refresh_rankings(request):
     totals = IngestRankingsService.execute({})
