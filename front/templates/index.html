@@ -26,7 +26,7 @@
               <div class="carousel-caption">
                 <h1>Tennis evolution</h1>
                 <p>Learn about evolution of tennis with the advance statictics</p>
-                <p><a class="btn btn-lg btn-primary" href="{% url 'players' %}" role="button">See graphics</a></p>
+                <p><a class="btn btn-lg btn-primary" href="{% url 'advance_stats' %}" role="button">See graphics</a></p>
               </div>
             </div>
           </div>
@@ -36,7 +36,7 @@
               <div class="carousel-caption text-right">
                 <h1>Predict metrics and winner</h1>
                 <p>With our prediction model you can see wich player will win and his stats for any game</p>
-                <p><a class="btn btn-lg btn-primary" href="{% url 'players' %}" role="button">Learn more</a></p>
+                <p><a class="btn btn-lg btn-primary" href="{% url 'predictions' %}" role="button">Learn more</a></p>
               </div>
             </div>
           </div>
@@ -59,24 +59,24 @@
       <div class="container marketing">
 
         <!-- Three columns of text below the carousel -->
-        <div class="row">
+        <div class="row" style="padding-top: 50px;">
           <div class="col-lg-4">
-            <img class="rounded-circle" src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" alt="Generic placeholder image" width="140" height="140">
-            <h2>Heading</h2>
-            <p>Donec sed odio dui. Etiam porta sem malesuada magna mollis euismod. Nullam id dolor id nibh ultricies vehicula ut id elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna.</p>
-            <p><a class="btn btn-secondary" href="#" role="button">View details &raquo;</a></p>
+            <img class="rounded-circle" src="{% static 'front/img/home-left.jpg' %}" width="140px" height="140px" alt='Imagen de <a href="https://pixabay.com/es/users/roby0059-4494131/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2086224">roby0059</a> en <a href="https://pixabay.com/es/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2086224">Pixabay</a>" width="140" height="140'>
+            <h2>Players</h2>
+            <p>Search the players database and you can find statistics on <b>any game of his career</b>. You can also search for rivals and get all the information about their matches</p>
+            <p><a class="btn btn-secondary" href="{% url 'players' %}" role="button">View details &raquo;</a></p>
           </div><!-- /.col-lg-4 -->
           <div class="col-lg-4">
-            <img class="rounded-circle" src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" alt="Generic placeholder image" width="140" height="140">
-            <h2>Heading</h2>
-            <p>Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Cras mattis consectetur purus sit amet fermentum. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh.</p>
-            <p><a class="btn btn-secondary" href="#" role="button">View details &raquo;</a></p>
+            <img class="rounded-circle" src="{% static 'front/img/home-center.jpg' %}" alt='Imagen de <a href="https://pixabay.com/es/users/bessi-909086/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1381230">Bessi</a> en <a href="https://pixabay.com/es/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1381230">Pixabay</a>' width="140" height="140">
+            <h2>Stats</h2>
+            <p>Dive deeper into tennis statistics with the Interactive Stats section. You can filter and search for information on more than <b>150k games and 50k players</b> with just a few clicks</p>
+            <p><a class="btn btn-secondary" href="{% url 'advance_stats' %}" role="button">View details &raquo;</a></p>
           </div><!-- /.col-lg-4 -->
           <div class="col-lg-4">
-            <img class="rounded-circle" src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" alt="Generic placeholder image" width="140" height="140">
-            <h2>Heading</h2>
-            <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-            <p><a class="btn btn-secondary" href="#" role="button">View details &raquo;</a></p>
+            <img class="rounded-circle" src="{% static 'front/img/home-right.jpg' %}" alt='Imagen de <a href="https://pixabay.com/es/users/constantin-62578/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=436084">Constantin Dancu</a> en <a href="https://pixabay.com/es/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=436084">Pixabay</a>' width="140" height="140">
+            <h2>Predictions</h2>
+            <p>Now it's your turn! With our <b>prediction models</b> you can know which player will win the game and know his stats before anyone else</p>
+            <p><a class="btn btn-secondary" href="#" role="{% url 'predictions' %}">View details &raquo;</a></p>
           </div><!-- /.col-lg-4 -->
         </div><!-- /.row -->
 
@@ -87,11 +87,11 @@
 
         <div class="row featurette">
           <div class="col-md-7">
-            <h2 class="featurette-heading">First featurette heading. <span class="text-muted">It'll blow your mind.</span></h2>
-            <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+            <h2 class="featurette-heading">Discover the world of tennis.<span class="text-muted">150k matches and 50k players</span></h2>
+            <p class="lead">Our database has thousand of data free for you. Find a player and see all his matches</p>
           </div>
           <div class="col-md-5">
-            <img class="featurette-image img-fluid mx-auto" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+            <img class="featurette-image img-fluid mx-auto" src="{% static 'front/img/home-big-1.jpg' %}" alt='Foto de Gonzalo Facello en Pexels'>
           </div>
         </div>
 
@@ -99,11 +99,11 @@
 
         <div class="row featurette">
           <div class="col-md-7 order-md-2">
-            <h2 class="featurette-heading">Oh yeah, it's that good. <span class="text-muted">See for yourself.</span></h2>
-            <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+            <h2 class="featurette-heading">All the information at your fingertips. <span class="text-muted">Dive into the stats!.</span></h2>
+            <p class="lead">With PowerBI we have develop an interactive tool for you. You can dive into every match in tennis history and see graphs of any statistic</p>
           </div>
           <div class="col-md-5 order-md-1">
-            <img class="featurette-image img-fluid mx-auto" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+            <img class="featurette-image img-fluid mx-auto" src="{% static 'front/img/home-big-2.jpg' %}" alt='Foto de cottonbro en Pexels'>
           </div>
         </div>
 
@@ -111,11 +111,11 @@
 
         <div class="row featurette">
           <div class="col-md-7">
-            <h2 class="featurette-heading">And lastly, this one. <span class="text-muted">Checkmate.</span></h2>
-            <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+            <h2 class="featurette-heading">We are not wizards... <span class="text-muted">But we know something about data.</span></h2>
+            <p class="lead">With our algorithm we can predict match results and the statistics of each player. Try it and you will be surprised</p>
           </div>
           <div class="col-md-5">
-            <img class="featurette-image img-fluid mx-auto" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+            <img class="featurette-image img-fluid mx-auto" src="{% static 'front/img/home-big-3.jpg' %}" alt='Foto de Markus Spiske en Pexels'>
           </div>
         </div>
 
