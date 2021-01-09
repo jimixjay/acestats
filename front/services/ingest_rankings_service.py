@@ -12,8 +12,11 @@ class IngestRankingsService(services.Service):
         cursor = connection.cursor()
 
         for decade in ['90s', '00s', '10s', 'current']:
+            header = 0
+            if decade == 'current':
+                header = None
             csv_file = pd.read_csv(
-                'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_rankings_' + decade + '.csv', header=None, names=['date', 'rank', 'player_id', 'points'])
+                'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_rankings_' + decade + '.csv', header=header, names=['date', 'rank', 'player_id', 'points'])
 
             for row in csv_file[csv_file['rank'] < 500].itertuples():
                 date = datetime.datetime.strptime(str(int(row.date)), '%Y%m%d').date()
