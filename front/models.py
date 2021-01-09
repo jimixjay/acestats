@@ -40,12 +40,6 @@ class Tourney_Level(models.Model):
     created_at = models.DateTimeField(auto_now=True, auto_now_add=False)
     updated_at = models.DateTimeField(auto_now=False, auto_now_add=False)
 
-class Player_Entry(models.Model):
-    code = models.TextField()        
-    name = models.TextField()
-    created_at = models.DateTimeField(auto_now=True, auto_now_add=False)
-    updated_at = models.DateTimeField(auto_now=False, auto_now_add=False)
-
 class Match_Stats(models.Model):
     id = models.TextField(primary_key=True)
     type = models.TextField()    
@@ -63,7 +57,6 @@ class Match_Stats(models.Model):
     rank_points = models.IntegerField(null=True)
     is_winner = models.BooleanField()
     player = models.ForeignKey("Player", on_delete=models.CASCADE, null=True)
-    player_entry = models.ForeignKey("Player_Entry", on_delete=models.CASCADE, null=True)
     match = models.ForeignKey("Match", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now=True, auto_now_add=False)
     updated_at = models.DateTimeField(auto_now=False, auto_now_add=False)
